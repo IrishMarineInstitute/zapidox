@@ -6,53 +6,54 @@
   <!-- prism for js highlights -->
   <link rel="stylesheet" href="css/prism.css">
   <link rel="icon" href="../favicon.ico">
-  <link rel="stylesheet" href="css/siimple.css">
-  <!-- see https://siimple.juanes.xyz/ -->
-  <link rel="stylesheet" href="css/demo.css">
+  <link rel="stylesheet"
+      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.16.2/build/styles/default.min.css">
   <script src="js/prism.js"></script>
-  <script src="js/jquery-3.4.1.min.js"></script>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+<script src="https://irishmarineinstitute.github.io/awesome-erddap/erddaps.js"></script>
   <title>zapidox</title>
 </head>
 
 <body>
-  <div class="siimple-content">
-  <div class="siimple-box" align="center">
-    <div class="siimple-box-title">zapidox: ERDDAP+Slate API Documentation Generator</div>
+  <div class="container-fluid">
+    <div class="container">
+  <h1>zapidox: ERDDAP API Documentation Generator</h1>
+
+    <div class="form-group row">
+	   <label for="erddap_url" class="col-sm-2 col-form-label float-right">ERDDAP: </label>
+       <div class="col-sm-10">
+        <select id="erddap_url" name="erddap_url">
+            <option value="" selected="true">Choose...</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group row">
+  	    <label for="datasets" class="col-sm-2 col-form-label">Dataset: </label>
+         <div class="col-sm-10">
+        	 <select id="datasets" class="form-control">
+      	   </select>
+        </div>
   </div>
-
-
-
-
-
-  <div class="siimple-grid">
-  <div class="siimple-grid-row">
-    <div class="siimple-grid-col siimple-grid-col--2">&nbsp;</div>
-    <div class="siimple-grid-col siimple-grid-col--9">
-
-	  <label class="siimple-label">Your ERDDAP: </label>
-	    <input id="erddap_url" name="erddap_url" value="https://erddap.marine.ie/erddap/" class="siimple-input siimple-input--fluid" placeholder="https://your/erddap/" />
-
-	    <label class="siimple-label">Dataset: </label>
-	<select id="datasets" class="siimple-select">
-	    <option selected>Option 1</option>
-	    <option>Option 2</option>
-	    <option>Option 3</option>
-	</select>
-	<div class="siimple-btn siimple-btn--primary">Go</div>
-	<br>
-	<label class="siimple-label">Output: <span id="saveas"></span></label>
-    <textarea id="output" class="siimple-textarea siimple-textarea--fluid" rows="5" ></textarea>
+    <div class="form-group invisible">
+  	<label for="output">Output: <span id="saveas"></span></label>
+    <textarea id="output" style="font-family:monospace;" class="form-control pre" rows="5" ></textarea>
     </div>
   </div>
-  <hr>
-  <div class="siimple-footer" align="center">
+    <div id="preview"></div>
+
+  </div>
+<footer class="footer">
     Another Project by Marine Institute
-  </div>
-  </div>
-  <!-- erddap -->
+</footer>
   <script src="js/erddap.js"></script>
   <script src="js/zapidox.js"></script>
   <script src="js/app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it@10.0.0/dist/markdown-it.min.js"></script>
+
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.16.2/build/highlight.min.js"></script>
 </body>
 
 </html>

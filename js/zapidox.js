@@ -1,3 +1,4 @@
+
 var getErddapZapidocs = function(query_url){
 	// get the current zapidocs from ERDDAP, either as an object,
 	// or as a string if the current value doesn't parse to a json object.
@@ -27,32 +28,56 @@ var _getMetaZapidocs = function(meta){
 			}
 			return zapidox;
 }
-var generateAPIDocs = function(erddap, dataset_id){
+var generateAPIDocs = function(erddap, dataset_id, options){
+	options = options || {bootstrap4: false}; // use markdown-it to translate to html.
+	if(options.tableInTitle === undefined){
+		options.tableInTitle = options.bootstrap4 ? false: true;
+	}
 	return new Promise(function(resolve,reject){
 		var ds = erddap.dataset(dataset_id);
 		ds.fetchMetadata().then(function(meta){
-			//console.log(meta);
+			var joinParts = function(toc,parts){
+				if(toc.length && options.bootstrap4){
+					toc.unshift("<p><a href='#'>Overview</a></p>");
+
+				   var body = parts.join("\n\n");
+				   return [
+				   	'<div class="row">',
+				   	'<div class="col-sm-2 bg-light">',
+				   	'<div class="sticky-top">',
+				   	toc.join("\n"),
+				   	'</div>',
+				   	'</div>',
+				   	'<div class="col-sm-10">',
+				   	'',
+				   	body,
+				   	'</div>',
+				   	'</div>'].join("\n");
+				}
+				return parts.join("\n\n");
+			}
+			var toc = [];
 			var ncglobal = meta.info.attribute["NC_GLOBAL"];
 			var overview = getOverview(ncglobal, erddap.base_url, dataset_id);
-			var variables = getVariablesTable(meta, dataset_id);
+			var variables = getVariablesTable(meta, dataset_id, options, toc);
 		    var parts = [overview,variables];
 		    var zapidox = _getMetaZapidocs(meta);
 			if(typeof(zapidox) == "object" && zapidox.length){
 				var docs = [];
 				var generateZDocs = function(method){
-					generateMethodDocs(ds,method).then(function(result){
+					generateMethodDocs(ds,method,options, toc).then(function(result){
 						parts.push(result);
 						if(zapidox.length){
 							generateZDocs(zapidox.shift());
 						}else{
-							resolve(parts.join("\n\n"));
+							resolve(joinParts(toc,parts));
 						}
 					});
 
 				}
 				generateZDocs(zapidox.shift());
 			}else{
-				resolve(parts.join("\n\n"));
+				resolve(joinParts(toc,parts));
 			}
 		});
 	});
@@ -145,7 +170,7 @@ var getQueryOutput = function(url,params){
 			return lines.join("\n");
 		});
 }
-var generateMethodDocs = function(dataset, method){
+var generateMethodDocs = function(dataset, method,options, toc){
 	return new Promise(function(resolve,reject){
 		var formats = method.formats || [".csv0"]
 		var output = [];
@@ -167,30 +192,69 @@ var generateMethodDocs = function(dataset, method){
 				}
 			});
 
+			var id_prefix = (dataset.dataset_id+"-"+method.name+"-"+formatNoExtension).replace(/\W/,'-').replace(/--/g,'-').toLowerCase();
+
 			output.push("");
-			output.push(["## ",dataset.dataset_id,": ",method.name," (", formatNoExtension, ")"].join(""));
+			if(options.tableInTitle){		
+				output.push(["## ",dataset.dataset_id,": ",method.name," (", formatNoExtension, ")"].join(""));
+			}else{
+				var title = method.name + " (" + formatNoExtension + ")";
+				if(options.bootstrap4){
+					toc.push(["<p>",'<a href="#',id_prefix,'">',title,"</a></p>"].join(""));
+					output.push('<hr/><div class="row"><div class="col-sm-7">')
+					output.push(["<h2 id='"+id_prefix+"'>",title,"</h2>"].join(""));
+				}else{
+					output.push("## " + title);
+				}
+			}
 			output.push("");
 			output.push(method.description);
 			output.push("");
-			output.push("```shell");
+
+			var getBeforeCode = function(lang){return "\n```"+lang};
+			var getAfterCode = function(){return "```"};
+			var output_end = "";
+
+			if(options.bootstrap4){
+				output_end = "</div></div>";
+				output.push("\n");
+				output.push('</div><div class="col-sm-5">');
+				output.push('<ul class="nav nav-pills mb-5" id="pills-'+id_prefix+'-tab" role="tablist">');
+				var selected = true;
+				["shell","python","r","javascript","csharp"].forEach((lang)=>{
+					var fix = id_prefix+'-'+lang
+					output.push('<li class="nav-item">');
+					output.push('<a class="nav-link'+(selected?" active":"")+'" id="pills-'+fix+'-tab" data-toggle="pill" href="#pills-'+fix+'" role="tab" aria-controls="pills-'+fix+'" aria-selected="'+selected+'">'+lang+'</a>')
+					output.push('</li>');
+					selected = false;
+				});
+				output.push("</ul>");
+				output.push('<div class="tab-content" id="pills-'+id_prefix+'-tabContent">');
+				getBeforeCode = function(lang,active){
+					var fix = id_prefix+'-'+lang
+					return '<div class="tab-pane fade'+(active?" show active":"")+'" id="pills-'+fix+'" role="tabpanel" aria-labelledby="pills-'+fix+'-tab">\n\n```'+lang;
+				}
+				getAfterCode = function(){return "```\n\n</div>"};
+			}
+
+			output.push(getBeforeCode("shell",true));
 			output.push("curl '"+full_url.replace(/'/,"\\'")+"'")
-			output.push("```");
-			output.push("");
-			output.push("```python");
+			output.push(getAfterCode());
+			output.push(getBeforeCode("python"));
 			output.push(getPythonFunction(partial_url, params, method.query))
-			output.push("```");
-			output.push("");
-			output.push("```r");
+			output.push(getAfterCode());
+			output.push(getBeforeCode("r"));
 			output.push(getRFunction(partial_url, params, method.query))
-			output.push("```");
-			output.push("");
-			output.push("```javascript");
+			output.push(getAfterCode());
+			output.push(getBeforeCode("javascript"));
 			output.push(getJavascriptFunction(partial_url, params))
-			output.push("```");
-			output.push("");
-			output.push("```csharp");
-			output.push("```");
-			output.push("");
+			output.push(getAfterCode());
+			output.push(getBeforeCode("csharp"));
+			output.push("// csharp code coming soon....(ish)")
+			output.push(getAfterCode());
+			if(options.bootstrap4){
+				output.push("</div>\n");
+			}
 			output.push("> The above commands return "+outputformat.toUpperCase()+" structured like this:");
 			output.push("");
 			output.push("```"+outputformat);
@@ -199,6 +263,7 @@ var generateMethodDocs = function(dataset, method){
 			getQueryOutput(partial_url, params).then(queryOutput => {
 			 	output.push(queryOutput);
 				output.push("```");
+				output.push(output_end);
 				if(formats.length){
 					generateFormatMethodDocs(formats.shift());
 				}else{
@@ -230,7 +295,7 @@ var getOverview = function(ncglobal,erddap_url, dataset_id){
 	return output.join("\n");
 
 }
-var getVariablesTable = function(meta,dataset_id){
+var getVariablesTable = function(meta,dataset_id,options,toc){
 	var rows = [["Variable","Type","Comment"],["----","----","-------"]];
 	var maxlen = [0,0,0];
 	meta._fieldnames.forEach(function(fieldname){
@@ -254,7 +319,20 @@ var getVariablesTable = function(meta,dataset_id){
 		output.push(row.join(" | "));
 	});
 	output[1] = output[1].replace(/\s/g,"-").replace("-|-"," | ");
+
 	output.unshift("");
-	output.unshift("## "+dataset_id+": Variables");
+	if(options.tableInTitle){
+		output.unshift("## "+dataset_id+": Variables");
+	}else{
+		if(options.bootstrap4){
+			var id = dataset_id+"--variables";
+			output.unshift("<h2 id='"+id+"'>Variables</h2>");
+			output.unshift('<div class="row"><div class="col-sm-7">');
+			output.push('</div><div class="col-sm-6"></div></div>');
+			toc.push("<p><a href='#"+id+"'>Variables</a></p>");
+		}else{
+			output.unshift("## Variables");
+		}
+	}
 	return output.join("\n");
 }
