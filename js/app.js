@@ -9,6 +9,7 @@ $(document).ready(function(){
 			return;
 		}
 		$("#datasets").empty();
+		$("#erddap_name").text($('#erddap_url option:selected').text());
 		try{
 			new URL(erddap_url);
 			var e = new ERDDAP(erddap_url);

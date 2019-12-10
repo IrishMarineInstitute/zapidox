@@ -17,6 +17,7 @@ var getErddapZapidocs = function(query_url){
    });
 }
 var _getMetaZapidocs = function(meta){
+	console.log("whooppeee");
 			var ncglobal = meta.info.attribute["NC_GLOBAL"];
 			var zapidox = (ncglobal.zapidox && ncglobal.zapidox.value) || "[]";
 			if(zapidox){
@@ -25,6 +26,24 @@ var _getMetaZapidocs = function(meta){
 				}catch(e){
 					console.log("couldn't parse zapidox attribute",e);
 				}
+			}
+			if(typeof(zapidox) == 'object' && zapidox.length == 0){
+				var defaultDataQuery = "";
+				var methodName = "getSomeData";
+				var description = "Fetch 10 rows of data";
+				if(ncglobal.defaultDataQuery){
+					defaultDataQuery = '&' + (ncglobal.defaultDataQuery.value.replace(/&orderByLimit[^&]*/,"").replace(/^&/,""));
+					methodName = "getDefaultData";
+					description += " using the defaultDataQuery";
+				}
+				zapidox = [
+					{
+						name: methodName,
+						description: description,
+						formats: [".csv0", ".jsonlKVP"],
+						query: meta._fieldnames.join(",")+defaultDataQuery+'&orderByLimit("10")'
+					}
+					];
 			}
 			return zapidox;
 }
