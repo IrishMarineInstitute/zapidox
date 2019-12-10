@@ -241,7 +241,7 @@ var generateMethodDocs = function(dataset, method,options, toc, dataset_link){
 				output.push('<ul class="nav nav-pills mb-5" id="pills-'+id_prefix+'-tab" role="tablist">');
 				var selected = true;
 				["shell","python","r","javascript","csharp"].forEach((lang)=>{
-					var fix = id_prefix+'-'+lang
+					var fix = (id_prefix+'-'+lang).replace(/[^\s-\d_]/g,'-');
 					output.push('<li class="nav-item">');
 					output.push('<a class="nav-link'+(selected?" active":"")+'" id="pills-'+fix+'-tab" data-toggle="pill" href="#pills-'+fix+'" role="tab" aria-controls="pills-'+fix+'" aria-selected="'+selected+'">'+lang+'</a>')
 					output.push('</li>');
@@ -250,7 +250,7 @@ var generateMethodDocs = function(dataset, method,options, toc, dataset_link){
 				output.push("</ul>");
 				output.push('<div class="tab-content" id="pills-'+id_prefix+'-tabContent">');
 				getBeforeCode = function(lang,active){
-					var fix = id_prefix+'-'+lang
+					var fix = (id_prefix+'-'+lang).replace(/[^\s-\d_]/g,'-');
 					return '<div class="tab-pane fade'+(active?" show active":"")+'" id="pills-'+fix+'" role="tabpanel" aria-labelledby="pills-'+fix+'-tab">\n\n```'+lang;
 				}
 				getAfterCode = function(){return "```\n\n</div>"};
