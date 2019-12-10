@@ -3,7 +3,6 @@ var erddap = undefined;
 $(document).ready(function(){
 	$("#datasets").change(inspectDataset);
 	$("#erddap_url").change(function(){
-		console.log("yes");
 		var erddap_url = $("#erddap_url").val();
 		if(!erddap_url){
 			return;
@@ -19,18 +18,53 @@ $(document).ready(function(){
 			},function(e){
 				console.log("failed to load ERDDAP from "+erddap_url,e);
 			});
-		}catch(e){
-			console.log("could not load ERDDAP from "+erddap_url,e);
-		}
+		}catch(eignore){}
 	})
+	var apidoxFromHash = function(){
+		var url = (window.location.href.split("#")[1] || "").split('|')[0];
+		if(url){
+			try{
+				new URL(url);
+				var erddap_url = new URL(url.replace(/\/(table|grid)dap.*$/g,"/")).toString();
+				$("#erddap_url").val(erddap_url);
+				if(!$("#erddap_url").val()){
+					$("#erddap_url").append(new Option(erddap_url, erddap_url));
+					$("#erddap_url").val(erddap_url);
+				}
+          		var e = new ERDDAP(erddap_url);
+          		var dataset_id = url.substring(erddap_url.length).split(/[\?\.\/]/)[1];
+          		if(dataset_id){
+	          		e.search(dataset_id).then(function(){
+					erddap = e;
+					listDatasets(dataset_id);
+				},function(e){
+					console.log("failed to load ERDDAP from "+erddap_url,e);
+				});
+          	}
+
+
+			}catch(err){
+				console.log("could not autoload "+url,err);
+			}
+		}
+
+	}
 	if(typeof(window.awesomeErddaps) !== 'undefined'){
 		awesomeErddaps.forEach((o)=>{
 			var e = new ERDDAP(o.url);
 			e.search("tabledap").then(function(){
-				$("#erddap_url").append(new Option(o.name?o.name:o.url, o.url));
+				// TODO remove duplicates, could happen if it's in the hash.
+				var selected = false;
+				if($("#erddap_url").val() == o.url){ //TODO: try without the trailing slash.
+					$('#erddap_url').find('option:selected').remove();
+					selected = true;
+				}
+				var newOption = new Option(o.name?o.name:o.url, o.url, false, selected);
+				$("#erddap_url").append(newOption);
 			},function(xxx){});
 		});
 	}
+	apidoxFromHash();
 });
 
 var inspectDataset = function(){
@@ -39,52 +73,69 @@ var inspectDataset = function(){
 		$("#output").val("generating...");
 		$("#preview").text("generating...");
 		var options = {bootstrap4: true};
+		options.format = function(docs){
+			return docs;
+		}
+
+		if(window.markdownit && options.bootstrap4){
+			var mdoptions = {
+				html: true,
+				linkify: true
+			};
+			if(window.hljs){
+				mdoptions.highlight = function (str, lang) {
+			    if (lang && hljs.getLanguage(lang)) {
+			      try {
+			        return '<pre class="hljs"><code>' +
+			               hljs.highlight(lang, str, true).value +
+			               '</code></pre>';
+			      } catch (__) {}
+			    }
+
+			    return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
+			  }
+			};
+			var md = window.markdownit(mdoptions);
+			md.renderer.rules.table_open = function(tokens, idx) {
+				    return '<table class="table table-sm">';
+			};
+			options.format = function(docs){
+				return md.render(docs);
+			}
+		}
 		generateAPIDocs(erddap,dsid,options).then(function(apidocs){
+			var docid = getDatasetLink(erddap.base_url,dsid);
+			$(":root").attr('id',docid);
+			if(!window.location.hash.startsWith("#"+docid)){
+				window.location.hash = docid;
+			}
 			$("#output").val(apidocs);
 			$("#output").attr("rows",apidocs.split("\n").length);
-			$("#saveas").text("save markdown to slate file includes/_"+dsid+".md")
-
-			if(window.markdownit && options.bootstrap4){
-				var mdoptions = {
-					html: true,
-					linkify: true
-				};
-				if(window.hljs){
-					mdoptions.highlight = function (str, lang) {
-				    if (lang && hljs.getLanguage(lang)) {
-				      try {
-				        return '<pre class="hljs"><code>' +
-				               hljs.highlight(lang, str, true).value +
-				               '</code></pre>';
-				      } catch (__) {}
-				    }
-
-				    return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
-				  }
-				};
-				var md = window.markdownit(mdoptions);
-				md.renderer.rules.table_open = function(tokens, idx) {
-  				    return '<table class="table table-sm">';
-				};
-				var result = md.render(apidocs);
-				$("#preview").empty();
-				$("#preview").append($(result));
-				$("#output").hide();
-
-
-			}
+			$("#saveas").text("save markdown to slate file includes/_"+dsid+".md");
+			var result = options.format(apidocs);
+			$("#preview").empty();
+			$("#preview").append($(result));
+			$("#output").hide();
+			var oldhash =  window.location.hash.substring(1);
+			window.location.hash = "#";
+			setTimeout(function(){
+				window.location.hash = oldhash;
+			},0);
 
 		})
 	}
 }
-var listDatasets = function(){
+var listDatasets = function(selected){
 	$('#datasets').empty();
 	erddap.search("tabledap").then(function(datasets){
 		if(datasets && datasets.length){
 			var dsids = datasets.map((ds)=>ds["Dataset ID"]).sort();
 			dsids.forEach(function(id){
-				$("#datasets").append($("<option></option>")
-				.attr("value",id).text(id));
+				var $el = $("<option></option>").attr("value",id).text(id);
+				if(selected && id == selected){
+					$el.attr('selected',true);
+				}
+				$("#datasets").append($el);
 			});
 			inspectDataset();
 		}

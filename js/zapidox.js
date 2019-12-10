@@ -17,7 +17,6 @@ var getErddapZapidocs = function(query_url){
    });
 }
 var _getMetaZapidocs = function(meta){
-	console.log("whooppeee");
 			var ncglobal = meta.info.attribute["NC_GLOBAL"];
 			var zapidox = (ncglobal.zapidox && ncglobal.zapidox.value) || "[]";
 			if(zapidox){
@@ -55,9 +54,10 @@ var generateAPIDocs = function(erddap, dataset_id, options){
 	return new Promise(function(resolve,reject){
 		var ds = erddap.dataset(dataset_id);
 		ds.fetchMetadata().then(function(meta){
+			var dataset_link = getDatasetLink(erddap.base_url,dataset_id);
 			var joinParts = function(toc,parts){
 				if(toc.length && options.bootstrap4){
-					toc.unshift("<p><a href='#'>Overview</a></p>");
+					toc.unshift("<p><a href='#"+dataset_link+"'>Overview</a></p>");
 
 				   var body = parts.join("\n\n");
 				   return [
@@ -77,14 +77,14 @@ var generateAPIDocs = function(erddap, dataset_id, options){
 			}
 			var toc = [];
 			var ncglobal = meta.info.attribute["NC_GLOBAL"];
-			var overview = getOverview(ncglobal, erddap.base_url, dataset_id);
-			var variables = getVariablesTable(meta, dataset_id, options, toc);
+			var overview = getOverview(ncglobal, dataset_link);
+			var variables = getVariablesTable(meta, dataset_id, options, toc, dataset_link);
 		    var parts = [overview,variables];
 		    var zapidox = _getMetaZapidocs(meta);
 			if(typeof(zapidox) == "object" && zapidox.length){
 				var docs = [];
 				var generateZDocs = function(method){
-					generateMethodDocs(ds,method,options, toc).then(function(result){
+					generateMethodDocs(ds,method,options, toc, dataset_link).then(function(result){
 						parts.push(result);
 						if(zapidox.length){
 							generateZDocs(zapidox.shift());
@@ -189,7 +189,7 @@ var getQueryOutput = function(url,params){
 			return lines.join("\n");
 		});
 }
-var generateMethodDocs = function(dataset, method,options, toc){
+var generateMethodDocs = function(dataset, method,options, toc, dataset_link){
 	return new Promise(function(resolve,reject){
 		var formats = method.formats || [".csv0"]
 		var output = [];
@@ -211,7 +211,7 @@ var generateMethodDocs = function(dataset, method,options, toc){
 				}
 			});
 
-			var id_prefix = (dataset.dataset_id+"-"+method.name+"-"+formatNoExtension).replace(/\W/,'-').replace(/--/g,'-').toLowerCase();
+			var id_prefix = dataset_link + "|" + (dataset.dataset_id+"-"+method.name+"-"+formatNoExtension).replace(/\W/,'-').replace(/--/g,'-').toLowerCase();
 
 			output.push("");
 			if(options.tableInTitle){		
@@ -271,38 +271,64 @@ var generateMethodDocs = function(dataset, method,options, toc){
 			output.push(getBeforeCode("csharp"));
 			output.push("// csharp code coming soon....(ish)")
 			output.push(getAfterCode());
-			if(options.bootstrap4){
-				output.push("</div>\n");
+
+			var queryResultToMarkdown = function(result){
+				var o = [];
+				o.push("> The above commands return "+outputformat.toUpperCase()+" structured like this:");
+				o.push("");
+				o.push("```"+outputformat);
+				o.push(result);
+				o.push("```");
+				return o.join("\n");
 			}
-			output.push("> The above commands return "+outputformat.toUpperCase()+" structured like this:");
-			output.push("");
-			output.push("```"+outputformat);
 
-
-			getQueryOutput(partial_url, params).then(queryOutput => {
-			 	output.push(queryOutput);
-				output.push("```");
+			var continueOrResolve = function(result){
+				if(result){
+					output.push(queryResultToMarkdown(result));
+				}
 				output.push(output_end);
 				if(formats.length){
 					generateFormatMethodDocs(formats.shift());
 				}else{
 					resolve(output.join("\n"));
 				}
-		   });
+			}
+			if(options.bootstrap4){
+				output.push("</div>\n");
+				// in case of generating html in the browser,
+				// the output code examples are added after.
+				var output_id = id_prefix+'-output';
+				output.push('<div id="'+output_id+'">(fetching output)</div>');
+				continueOrResolve();
+				getQueryOutput(partial_url, params).then(queryOutput => {
+				 	$(document.getElementById(output_id)).html(options.format(queryResultToMarkdown(queryOutput)));
+			   }, function(e){
+				   	$(document.getElementById(output_id)).html(options.format(queryResultToMarkdown("sorry the request failed, an example is not available at this time.")));
+			   });
+			}else{
+				getQueryOutput(partial_url, params).then(queryOutput => {
+				 	continueOrResolve(queryOutput);
+			   }, function(e){
+				   	continueOrResolve("sorry the request failed, an example is not available at this time.");
+			   });
+			}
 
 		}
 		generateFormatMethodDocs(formats.shift());
 	});
 }
 
-var getOverview = function(ncglobal,erddap_url, dataset_id){
+var getDatasetLink = function(erddap_url, dataset_id){
+	//TODO: might not be tabledap.
+	return [erddap_url,
+		"tabledap/",
+		dataset_id,
+		".html"].join("");
+}
+var getOverview = function(ncglobal,dataset_link){
 	var headline = [
 		"The [",ncglobal.title.value,"](",ncglobal.infoUrl.value,
-		") dataset is hosted in [ERDDAP](",
-		erddap_url,
-		"info/",
-		dataset_id,
-		"/index.html)"
+		") dataset is hosted in [ERDDAP]("+dataset_link+")"
 		].join("");
 	
 	var output =[ 
@@ -314,7 +340,7 @@ var getOverview = function(ncglobal,erddap_url, dataset_id){
 	return output.join("\n");
 
 }
-var getVariablesTable = function(meta,dataset_id,options,toc){
+var getVariablesTable = function(meta,dataset_id,options,toc,dataset_link){
 	var rows = [["Variable","Type","Comment"],["----","----","-------"]];
 	var maxlen = [0,0,0];
 	meta._fieldnames.forEach(function(fieldname){
@@ -344,10 +370,10 @@ var getVariablesTable = function(meta,dataset_id,options,toc){
 		output.unshift("## "+dataset_id+": Variables");
 	}else{
 		if(options.bootstrap4){
-			var id = dataset_id+"--variables";
+			var id = dataset_link+"|"+dataset_id+"--variables";
 			output.unshift("<h2 id='"+id+"'>Variables</h2>");
-			output.unshift('<div class="row"><div class="col-sm-7">');
-			output.push('</div><div class="col-sm-6"></div></div>');
+			output.unshift('<div class="row"><div class="col-sm-12">');
+			output.push('</div></div>');
 			toc.push("<p><a href='#"+id+"'>Variables</a></p>");
 		}else{
 			output.unshift("## Variables");
