@@ -220,8 +220,8 @@ var generateMethodDocs = function(dataset, method,options, toc, dataset_link){
 				var title = method.name + " (" + formatNoExtension + ")";
 				if(options.bootstrap4){
 					toc.push(["<p>",'<a href="#',id_prefix,'">',title,"</a></p>"].join(""));
-					output.push('<hr/><div class="row"><div class="col-sm-7">')
-					output.push(["<h2 id='"+id_prefix+"'>",title,"</h2>"].join(""));
+					output.push('<hr id="'+id_prefix+'" /><div class="row"><div class="col-sm-7">')
+					output.push(["<h2>",title,"</h2>"].join(""));
 				}else{
 					output.push("## " + title);
 				}
@@ -241,16 +241,16 @@ var generateMethodDocs = function(dataset, method,options, toc, dataset_link){
 				output.push('<ul class="nav nav-pills mb-5" id="pills-'+id_prefix+'-tab" role="tablist">');
 				var selected = true;
 				["shell","python","r","javascript","csharp"].forEach((lang)=>{
-					var fix = (id_prefix+'-'+lang).replace(/[^\s-\d_]/g,'-');
+					var fix = (id_prefix+'-'+lang).replace(/[^\w\-\d_]/g,'-');
 					output.push('<li class="nav-item">');
-					output.push('<a class="nav-link'+(selected?" active":"")+'" id="pills-'+fix+'-tab" data-toggle="pill" href="#pills-'+fix+'" role="tab" aria-controls="pills-'+fix+'" aria-selected="'+selected+'">'+lang+'</a>')
+					output.push('<a class="codetab nav-link'+(selected?" active ":" ")+lang+'-lang" id="pills-'+fix+'-tab" data-lang=".'+lang+'-lang" data-toggle="pill" href="#pills-'+fix+'" role="tab" aria-controls="pills-'+fix+'" aria-selected="'+selected+'">'+lang+'</a>')
 					output.push('</li>');
 					selected = false;
 				});
 				output.push("</ul>");
 				output.push('<div class="tab-content" id="pills-'+id_prefix+'-tabContent">');
 				getBeforeCode = function(lang,active){
-					var fix = (id_prefix+'-'+lang).replace(/[^\s-\d_]/g,'-');
+					var fix = (id_prefix+'-'+lang).replace(/[^\w\-\d_]/g,'-');
 					return '<div class="tab-pane fade'+(active?" show active":"")+'" id="pills-'+fix+'" role="tabpanel" aria-labelledby="pills-'+fix+'-tab">\n\n```'+lang;
 				}
 				getAfterCode = function(){return "```\n\n</div>"};

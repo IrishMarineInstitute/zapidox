@@ -115,6 +115,10 @@ var inspectDataset = function(){
 			var result = options.format(apidocs);
 			$("#preview").empty();
 			$("#preview").append($(result));
+			// switch all language tabs together
+			$('.codetab').on('shown.bs.tab', function (e) {
+  				$($(this).data("lang")).tab('show');
+			});
 			$("#output").hide();
 			var oldhash =  window.location.hash.substring(1);
 			window.location.hash = "#";
