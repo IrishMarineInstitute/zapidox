@@ -1,13 +1,22 @@
 
+var parseErddapUrl = function(query_url){
+	var erddap_url = new URL(query_url.replace(/\/(table|grid)dap.*$/g,"/")).toString();
+    var dataset_id = query_url.substring(erddap_url.length).split(/[\?\.\/]/)[1];
+    var query = query_url;
+    if(query.indexOf('?')>=0){
+    	query = query.substring(query.indexOf('?')+1);
+    }
+    return {erddap_url: erddap_url, dataset_id: dataset_id, query: query};
+}
+
 var getErddapZapidocs = function(query_url){
 	// get the current zapidocs from ERDDAP, either as an object,
 	// or as a string if the current value doesn't parse to a json object.
    return new Promise(function(resolve,reject){
        try{
-          	var erddap_url = new URL(query_url.replace(/\/(table|grid)dap.*$/g,"/")).toString();
-          	var erddap = new ERDDAP(erddap_url);
-          	var dataset_id = query_url.substring(erddap_url.length).split(/[\?\.\/]/)[1];
-          	var ds = erddap.dataset(dataset_id);
+       		var parsed = parseErddapUrl(query_url);
+          	var erddap = new ERDDAP(parsed.erddap_url);
+          	var ds = erddap.dataset(parsed.dataset_id);
 	 		ds.fetchMetadata().then(function(meta){
 	 			resolve(_getMetaZapidocs(meta));
 	 		});
@@ -51,14 +60,47 @@ var generateAPIDocs = function(erddap, dataset_id, options){
 	if(options.tableInTitle === undefined){
 		options.tableInTitle = options.bootstrap4 ? false: true;
 	}
+	if(!options.format){
+		
+		options.format = function(docs){
+			return docs;
+		}
+
+		if(window.markdownit && options.bootstrap4){
+			var mdoptions = {
+				html: true,
+				linkify: true
+			};
+			if(window.hljs){
+				mdoptions.highlight = function (str, lang) {
+			    if (lang && hljs.getLanguage(lang)) {
+			      try {
+			        return '<pre class="hljs"><code>' +
+			               hljs.highlight(lang, str, true).value +
+			               '</code></pre>';
+			      } catch (__) {}
+			    }
+
+			    return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
+			  }
+			};
+			var md = window.markdownit(mdoptions);
+			md.renderer.rules.table_open = function(tokens, idx) {
+				    return '<table class="table table-sm">';
+			};
+			options.format = function(docs){
+				return md.render(docs);
+			}
+		}
+	}
 	return new Promise(function(resolve,reject){
 		var ds = erddap.dataset(dataset_id);
 		ds.fetchMetadata().then(function(meta){
 			var dataset_link = getDatasetLink(erddap.base_url,dataset_id);
 			var joinParts = function(toc,parts){
 				if(toc.length && options.bootstrap4){
-					toc.unshift("<p><a href='#"+dataset_link+"'>Overview</a></p>");
-
+					var id = dataset_link+"|--overview";
+					toc.unshift("<p><a href='#"+id+"'>Overview</a></p>");
 				   var body = parts.join("\n\n");
 				   return [
 				   	'<div class="row">',
@@ -77,10 +119,10 @@ var generateAPIDocs = function(erddap, dataset_id, options){
 			}
 			var toc = [];
 			var ncglobal = meta.info.attribute["NC_GLOBAL"];
-			var overview = getOverview(ncglobal, dataset_link);
+			var overview = getOverview(ncglobal, dataset_link, options);
 			var variables = getVariablesTable(meta, dataset_id, options, toc, dataset_link);
 		    var parts = [overview,variables];
-		    var zapidox = _getMetaZapidocs(meta);
+		    var zapidox = options.zapidox || _getMetaZapidocs(meta);
 			if(typeof(zapidox) == "object" && zapidox.length){
 				var docs = [];
 				var generateZDocs = function(method){
@@ -194,6 +236,7 @@ var generateMethodDocs = function(dataset, method,options, toc, dataset_link){
 		var formats = method.formats || [".csv0"]
 		var output = [];
 		var generateFormatMethodDocs = function(format){
+			format = format || "";
 			var outputformat = {}[format] || format.replace(/^[^a-zA-Z]/g,"").replace(/[^a-zA-Z]$/g,"");
 			var formatNoExtension = format.replace(/^\./,"");
 			var base_url = dataset._summary.tabledap || dataset._summary.griddap;
@@ -325,18 +368,26 @@ var getDatasetLink = function(erddap_url, dataset_id){
 		dataset_id,
 		".html"].join("");
 }
-var getOverview = function(ncglobal,dataset_link){
+var getOverview = function(ncglobal,dataset_link,options){
 	var headline = [
 		"The [",ncglobal.title.value,"](",ncglobal.infoUrl.value,
 		") dataset is hosted in [ERDDAP]("+dataset_link+")"
 		].join("");
 	
 	var output =[ 
-	    "# "+ncglobal.title.value, 
-	    "", 
+		"", 
 	    headline, 
 	    "", 
 	    ncglobal.summary.value];
+		if(options.bootstrap4){
+			var id = dataset_link+"|--overview";
+			output.unshift("<h2 id='"+id+"'>Overview</h2>");
+			output.unshift('<div class="row"><div class="col-sm-12">');
+			output.push('</div></div>');
+		}else{
+			output.unshift("# "+ncglobal.title.value);
+		}
+
 	return output.join("\n");
 
 }

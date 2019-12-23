@@ -73,36 +73,7 @@ var inspectDataset = function(){
 		$("#output").val("generating...");
 		$("#preview").text("generating...");
 		var options = {bootstrap4: true};
-		options.format = function(docs){
-			return docs;
-		}
 
-		if(window.markdownit && options.bootstrap4){
-			var mdoptions = {
-				html: true,
-				linkify: true
-			};
-			if(window.hljs){
-				mdoptions.highlight = function (str, lang) {
-			    if (lang && hljs.getLanguage(lang)) {
-			      try {
-			        return '<pre class="hljs"><code>' +
-			               hljs.highlight(lang, str, true).value +
-			               '</code></pre>';
-			      } catch (__) {}
-			    }
-
-			    return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
-			  }
-			};
-			var md = window.markdownit(mdoptions);
-			md.renderer.rules.table_open = function(tokens, idx) {
-				    return '<table class="table table-sm">';
-			};
-			options.format = function(docs){
-				return md.render(docs);
-			}
-		}
 		generateAPIDocs(erddap,dsid,options).then(function(apidocs){
 			var docid = getDatasetLink(erddap.base_url,dsid);
 			$(":root").attr('id',docid);
