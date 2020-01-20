@@ -80,6 +80,7 @@ var inspectDataset = function(){
 			if(!window.location.hash.startsWith("#"+docid)){
 				window.location.hash = docid;
 			}
+			$("#editor_link").prop("href","./editor/"+window.location.hash.split("|")[0]);
 			$("#output").val(apidocs);
 			$("#output").attr("rows",apidocs.split("\n").length);
 			$("#saveas").text("save markdown to slate file includes/_"+dsid+".md");

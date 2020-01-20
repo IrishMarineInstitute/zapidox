@@ -362,6 +362,13 @@ var addMethod = function(method){
 
    });
 
+   if(window.location.hash){
+     var url = window.location.hash.substring(1);
+     if(url.toLowerCase().startsWith("http")){
+      $("#erddap_query_url").val(url);
+     }
+   }
+
     $('#newModal').modal('show');
     
   </script>
