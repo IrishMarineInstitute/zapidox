@@ -195,7 +195,8 @@
     $("#save_erddap_query_url_btn").prop('disabled',true);
     var parsed = getParsedErddapQueryUrl();
     showParsedStatus(parsed);
-    if(!(erddap || parsed.error)){
+    if((!(erddap || parsed.error)) || erddap.base_url != parsed.erddap_url || dsid != parsed.dataset_id){
+      // TODO warn user if trying to change datasets.
       erddap = new ERDDAP(parsed.erddap_url);
       dsid = parsed.dataset_id;
     }
