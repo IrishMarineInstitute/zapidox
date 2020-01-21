@@ -220,7 +220,7 @@ var getQueryOutput = function(url,params){
 		url = url + '?' + params.map(v => typeof(v)=='string'? encodeURIComponent(v) :
 	     (encodeURIComponent(Object.keys(v)[0]) + '=' + encodeURIComponent(Object.values(v)[0]))
 	).join('&');
-	return fetch(url)
+	return fetch(url+'&orderByLimit("15")')
 		.then(response => response.text())
 		.then(data => {
 			var lines = data.split("\n");
