@@ -270,6 +270,7 @@
           query: erddap_query_url.search.substring(1)});
         var lines = JSON.stringify(zapidox,null,4).split("\n");
         lines.unshift('        <att name="zapidox"><![CDATA[');
+        lines.unshift('        <!-- zapidox for '+parsed.dataset_id+' -->');
         lines.push("]]></att>")
         $("#output").val(lines.join("\n"));
         $("#output").attr("rows",lines.length);
@@ -289,6 +290,7 @@ var updateZapidox = function(){
   var docs = getExamples();
   var lines = JSON.stringify(docs,null,4).split("\n");
   lines.unshift('        <att name="zapidox"><![CDATA[');
+  lines.unshift('        <!-- zapidox for '+dsid+' -->');
   lines.push("]]></att>");
   $("#output").val(lines.join("\n"));
   $("#output").attr("rows",lines.length);

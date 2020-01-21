@@ -161,28 +161,39 @@ var getJavascriptFunction = function(url,params){
 
 	return output.join("\n");
 }
-var getPythonFunction = function(url,params,query){
+var getPythonFunction = function(url,params,query,format){
 	var output = [];
 	output.push("import requests");
-	output.push("# commented code requires requests > 2.2.0");
-	output.push("# see https://github.com/psf/requests/issues/2651");
-	output.push("#  params = (");
-	for(var i=0;i<params.length;i++){
+	output.push("import pandas as pd");
+	output.push("from io import StringIO");
+	output.push("")
+	output.push("url = '"+url+"'")
+	output.push("fields = '"+params[0]+"'");
+	output.push("params = [")
+	output.push("    fields")
+	for(var i=1;i<params.length;i++){
 		var o = params[i];
-		var line = "#   '"+ o + "': None";
+		var line = "   ,'"+ o + "'";
 		if(typeof(o) != 'string'){
-			line = "#   '"+Object.keys(o)[0]+"': '"+Object.values(o)[0]+"'";
-		}
-		if(i+1<params.length){
-			line += ","
+			line = "   ,'"+Object.keys(o)[0]+"="+Object.values(o)[0]+"'";
 		}
 		output.push(line);
 	}
-	output.push("# )");
-	output.push("# r = requests.get('"+url+"', params=params)")
-	output.push("r = requests.get('"+url+"?"+query+"')")
-	output.push("r.text")
-	output.push("#")
+	output.push("]");
+	output.push("response = requests.get( url + '?' + '&'.join(params))")
+	output.push("response.raise_for_status()")
+	output.push("")
+	output.push("# error raised above if request failed")
+	if(format.toLowerCase().startsWith(".csv")){
+		output.push("df = pd.read_csv(StringIO(response.text), names=fields.split(','), parse_dates=['time'])")
+		output.push("df.head()")
+	}else if(format.toLowerCase().startsWith(".jsonlkvp")){
+		output.push("jsonlKVP = '[' + ','.join(response.text.strip().split('\\n'))+']'")
+		output.push("df = pd.read_json(jsonlKVP, orient='records')")
+		output.push("df.head()")
+	}else{
+		output.push("response.text");
+	}
     return output.join("\n");
 }
 var getRFunction = function(url,params){
@@ -303,7 +314,7 @@ var generateMethodDocs = function(dataset, method,options, toc, dataset_link){
 			output.push("curl '"+full_url.replace(/'/,"\\'")+"'")
 			output.push(getAfterCode());
 			output.push(getBeforeCode("python"));
-			output.push(getPythonFunction(partial_url, params, method.query))
+			output.push(getPythonFunction(partial_url, params, method.query, format))
 			output.push(getAfterCode());
 			output.push(getBeforeCode("r"));
 			output.push(getRFunction(partial_url, params, method.query))
