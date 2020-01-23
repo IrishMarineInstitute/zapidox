@@ -1,37 +1,54 @@
-## Welcome to GitHub Pages
+# Welcome to zapidox
 
-You can use the [editor on GitHub](https://github.com/IrishMarineInstitute/zapidox/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+zapidox presents an API Documentation style interface for [ERDDAP](https://github.com/IrishMarineInstitute/awesome-erddap)
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+[Try it live](https://irishmarineinstitute.github.io/zapidox/#https://erddap.marine.ie/erddap/tabledap/IMI-TidePrediction_epa.html)
 
-### Markdown
+## How zapidox works
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+Zapidox is a HTML+javascript application which runs in the browser. Zapidox makes standard requests to the selected ERDDAP server, and renders the result in the browser.
 
-```markdown
-Syntax highlighted code block
+Zapidox pays particular attention to the <em>zapidox</em> NC_Global attribute, if it exists. The zapidox attribute contains some JSON to name and describe the example queries. Zapidox represents these queries as API methods in the rendered documentation.
 
-# Header 1
-## Header 2
-### Header 3
+Below is an example zapidox attribute entry for a dataset:
 
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+```xml
+        <!-- zapidox for IMI-TidePrediction_epa -->
+        <att name="zapidox"><![CDATA[
+[
+    {
+        "name": "listForecastStations",
+        "description": "List the stations having forecast data for the next three days.",
+        "formats": [
+            ".csv0",
+            ".jsonlKVP"
+        ],
+        "query": "stationID,latitude,longitude&time%3E=now&time%3C=now%2B3d&distinct()"
+    },
+    {
+        "name": "getSeaSurfaceHeightForecast",
+        "description": "Get next three days of sea surface height at a specific station.",
+        "formats": [
+            ".csv0",
+            ".jsonlKVP"
+        ],
+        "query": "time%2Clongitude%2Clatitude%2CstationID%2Csea_surface_height&time%3E=now&time%3C=now+3d&stationID=%22BPNBF050000140001_MODELLED%22"
+    }
+]
+]]></att>
 ```
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+## How to add zapidox for my dataset
 
-### Jekyll Themes
+ 1. Use the [zapidox editor](https://irishmarineinstitute.github.io/zapidox/editor/#https://erddap.marine.ie/erddap/tabledap/IMI-TidePrediction_epa.html) for your own dataset, and view the preview.
+ 2. save the output in your ERDDAP datasets.xml file
+ 3. touch the dataset's flag file to reload.
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/IrishMarineInstitute/zapidox/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+That's it! Once the dataset has reloaded, your zapidox will appear.
 
-### Support or Contact
 
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+### Limitations
+
+ * Currently only works for CORS enabled ERDDAP servers.
+ * Currently only works for tabledap datasets
+
