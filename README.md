@@ -47,7 +47,7 @@ Below is an example zapidox attribute entry for a dataset:
 That's it! Once the dataset has reloaded, your zapidox will appear.
 
 <b>Hot Tip:</b> Share the link to your dataset's API documentation, by hash linking the dataset's data access form. For example:
-<a href="https://irishmarineinstitute.github.io/zapidox/editor/#https://erddap.marine.ie/erddap/tabledap/IMI-TidePrediction_epa.html">https://irishmarineinstitute.github.io/zapidox/editor/#https://erddap.marine.ie/erddap/tabledap/IMI-TidePrediction_epa.html</a>
+<a href="https://irishmarineinstitute.github.io/zapidox/#https://erddap.marine.ie/erddap/tabledap/IMI-TidePrediction_epa.html">https://irishmarineinstitute.github.io/zapidox/#https://erddap.marine.ie/erddap/tabledap/IMI-TidePrediction_epa.html</a>
 
 
 ### Limitations
