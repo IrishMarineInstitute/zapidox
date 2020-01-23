@@ -6,9 +6,9 @@ zapidox presents an API Documentation style interface for [ERDDAP](https://githu
 
 ## How zapidox works
 
-Zapidox is a HTML+javascript application which runs in the browser. Zapidox makes standard requests to the selected ERDDAP server, and renders the result in the browser.
+Zapidox is a HTML+javascript application which runs in the browser. Zapidox makes standard requests to the selected [ERDDAP](https://github.com/IrishMarineInstitute/awesome-erddap) server, and renders the result for the user.
 
-Zapidox pays particular attention to the <em>zapidox</em> NC_Global attribute, if it exists. The zapidox attribute contains some JSON to name and describe the example queries. Zapidox represents these queries as API methods in the rendered documentation.
+For any dataset, zapidox pays particular attention to the <em>zapidox</em> NC_Global attribute, if it exists. The zapidox attribute contains some JSON to name and describe the example queries. Zapidox represents these queries as API methods in the rendered documentation.
 
 Below is an example zapidox attribute entry for a dataset:
 
@@ -45,6 +45,9 @@ Below is an example zapidox attribute entry for a dataset:
  3. touch the dataset's flag file to reload.
 
 That's it! Once the dataset has reloaded, your zapidox will appear.
+
+<b>Hot Tip:</b> Share the link to your dataset's API documentation, by hash linking the dataset's data access form. For example:
+<a href="https://irishmarineinstitute.github.io/zapidox/editor/#https://erddap.marine.ie/erddap/tabledap/IMI-TidePrediction_epa.html">https://irishmarineinstitute.github.io/zapidox/editor/<b>#</b>https://erddap.marine.ie/erddap/tabledap/IMI-TidePrediction_epa.html</a>
 
 
 ### Limitations
