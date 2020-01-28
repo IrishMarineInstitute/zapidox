@@ -227,7 +227,7 @@ var getRFunction = function(url,params){
 	output.push("options <- lapply(options, URLencode, reserved=TRUE)");
 	output.push("");
 	output.push('url <- sprintf("'+ url +'?%s", '+"paste(options, collapse='&'))");
-	output.push("response = GET(url, params=params)")
+	output.push("response = GET(url)")
     return output.join("\n");
 
 }
