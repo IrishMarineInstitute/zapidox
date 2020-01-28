@@ -121,9 +121,13 @@ var generateAPIDocs = function(erddap, dataset_id, options){
 			var ncglobal = meta.info.attribute["NC_GLOBAL"];
 			var overview = getOverview(ncglobal, dataset_link, options);
 			var variables = getVariablesTable(meta, dataset_id, options, toc, dataset_link);
-		    var parts = [overview,variables];
+			var exampleQuerySection = [
+				"# Example Queries",
+				"","Below are some example queries to get you started with "+ncglobal.title.value
+			].join("\n")
+		    var parts = [overview,variables,exampleQuerySection];
 		    var zapidox = options.zapidox || _getMetaZapidocs(meta);
-			if(typeof(zapidox) == "object" && zapidox.length){
+			if(typeof(zapidox) == "object"){
 				var docs = [];
 				var generateZDocs = function(method){
 					generateMethodDocs(ds,method,options, toc, dataset_link).then(function(result){
@@ -227,13 +231,57 @@ var getRFunction = function(url,params){
     return output.join("\n");
 
 }
+var json2csv0 = function(data){
+	return Papa.unparse(data.table.rows);
+}
+var json2jsonlKVP = function(data){
+	var lines = [];
+	colNames = data.table.columnNames;
+	ncols = colNames.length;
+	var nrows = data.table.rows.length;
+	for(var i = 0; i<nrows; i++){
+		var line = {};
+		var row = data.table.rows[i];
+		for(var j=0; j<ncols; j++){
+			line[colNames[j]] = row[j];
+		}
+		lines.push(JSON.stringify(line));
+	}
+	return lines.join("\n");
+}
 var getQueryOutput = function(url,params){
+	var reformat = {
+		"csv0": json2csv0,
+		"jsonlKVP": json2jsonlKVP
+	}
+	var formatWanted = false;
+	var rx = /\.([^\.]*)$/;
+	var arr = rx.exec(url);
+	if(arr.length == 2){
+		formatWanted = arr[1];
+	}
+	var fnFormat = reformat[formatWanted];
+
+
+    var url = url.replace(rx,".json"); // for jsonp test
 		url = url + '?' + params.map(v => typeof(v)=='string'? encodeURIComponent(v) :
 	     (encodeURIComponent(Object.keys(v)[0]) + '=' + encodeURIComponent(Object.values(v)[0]))
 	).join('&');
-	return fetch(url+'&orderByLimit("15")')
-		.then(response => response.text())
+
+	url = url + (url.endsWith("?")? "" : "&") + 'orderByLimit("15")';
+
+	//fetchJsonp(url + urlParams.toString(),{ timeout: timeout, headers: {'Cache-Control': 'no-cache', 'Pragma': 'no-cache'}, jsonpCallback: ".jsonp"})
+	return fetchJsonp(url, {jsonpCallback: ".jsonp"})
+		.then(response => response.json())
 		.then(data => {
+				if(fnFormat){
+					try{
+						return fnFormat(data);
+					}catch(e){
+						console.log("failed to reformat data from json to "+formatWanted,e);
+					}
+				}
+			data = JSON.stringify(data);
 			var lines = data.split("\n");
 			if(lines.length > 24){
 				lines = lines.splice(0,15);
@@ -254,6 +302,10 @@ var generateMethodDocs = function(dataset, method,options, toc, dataset_link){
 			var partial_url = base_url + "." + formatNoExtension
 			var full_url =  partial_url + "?" + method.query;
 			var params = [];
+			if(full_url.startsWith("//")){
+				full_url = location.protocol+full_url;
+			}
+			//console.log(full_url);
 			var searchParams = new URL(full_url).searchParams;
 			searchParams.forEach((i,k)=>{
 				if (searchParams.get(k).length || method.query.indexOf(k+"=")>=0 || method.query.indexOf(encodeURIComponent(k)+"=")>=0){
@@ -375,6 +427,7 @@ var generateMethodDocs = function(dataset, method,options, toc, dataset_link){
 var getDatasetLink = function(erddap_url, dataset_id){
 	//TODO: might not be tabledap.
 	return [erddap_url,
+	     erddap_url.endsWith("/")?":":"/",
 		"tabledap/",
 		dataset_id,
 		".html"].join("");
@@ -389,7 +442,8 @@ var getOverview = function(ncglobal,dataset_link,options){
 		"", 
 	    headline, 
 	    "", 
-	    ncglobal.summary.value];
+	    ncglobal.summary.value,
+	    ];
 		if(options.bootstrap4){
 			var id = dataset_link+"|--overview";
 			output.unshift("<h2 id='"+id+"'>Overview</h2>");
@@ -398,7 +452,18 @@ var getOverview = function(ncglobal,dataset_link,options){
 		}else{
 			output.unshift("# "+ncglobal.title.value);
 		}
+    
+	output.push("");
+	output.push("## Tabledap Data Access Protocol");
+	output.push("Data from the "+ncglobal.title.value+" dataset can be fetched in [many formats]("+(dataset_link.replace(/[^\/]*$/,"documentation.html"))+") using simple (restful) http requests.");
+	output.push("");
+	output.push("The [data access form]("+dataset_link+") is a great way to get started, or to refine your query.");
+	output.push("");
 
+	/*
+	output.push("The general format for tabledap queries is " +
+		"<a href='"++"' title='"+dataset_link.replace(/.html$/,"")+"'>dataset_link</a>.<span title='eg. htmlTable, csv, nc, etc.'>format</span>?comma_separated_variable,&filter&anotherFilter")
+    */
 	return output.join("\n");
 
 }

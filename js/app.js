@@ -50,18 +50,33 @@ $(document).ready(function(){
 
 	}
 	if(typeof(window.awesomeErddaps) !== 'undefined'){
+		awesomeErddaps.forEach(function(o){
+			console.log(o.url);
+			o.name = o.name || (o.url || "").replace(/^[^\/]*\/\//,"");
+		});
+		awesomeErddaps.sort((a, b) => (a.name.toLowerCase() == b.name.toLowerCase() ? 0 : a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1));
+		awesomeErddaps.forEach((o)=>{
+			var selected = false;
+			if($("#erddap_url").val() == o.url){ //TODO: try without the trailing slash.
+				$('#erddap_url').find('option:selected').remove();
+				selected = true;
+			}
+			var newOption = new Option(o.name, o.url, false, selected);
+			$("#erddap_url").append(newOption);
+		})
 		awesomeErddaps.forEach((o)=>{
 			var e = new ERDDAP(o.url);
 			e.search("tabledap").then(function(){
-				// TODO remove duplicates, could happen if it's in the hash.
-				var selected = false;
-				if($("#erddap_url").val() == o.url){ //TODO: try without the trailing slash.
-					$('#erddap_url').find('option:selected').remove();
-					selected = true;
-				}
-				var newOption = new Option(o.name?o.name:o.url, o.url, false, selected);
-				$("#erddap_url").append(newOption);
-			},function(xxx){});
+				// pass (add a green checkmark?)
+
+			},function(xxx){
+				$("#erddap_url > option").each(function() {
+   					 if(this.value == o.url){
+   					 	$(this).text("(offline) "+$(this).text());
+   					 	$(this).attr('disabled','disabled');
+   					 }
+				});
+			});
 		});
 	}
 	apidoxFromHash();
