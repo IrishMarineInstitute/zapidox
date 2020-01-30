@@ -111,9 +111,11 @@
                   <input id="erddap_query_url" name="erddap_url" value="https://erddap.marine.ie/erddap/tabledap/IMI-TidePrediction_epa.htmlTable?time%2Clongitude%2Clatitude%2CstationID%2Csea_surface_height&time%3E=now&time%3C=now+3d&stationID=%22BPNBF050000140001_MODELLED%22" class="form-control" placeholder="paste your ERDDAP query here" />
                   <div class="invalid-feedback" id="erddap_query_url_error"></div>
                   <div class="valid-feedback" id="erddap_query_url_error">Looks good!</div>
+                
                 </div>
               </div>
               <div class="modal-footer">
+                <a class='btn btn-success' id="erddap_editor_link" href="https://erddap.marine.ie/erddap/tabledap/IMI-TidePrediction_epa.html" target="_blank">Open ERDDAP Data Access Form</a>
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                 <button type="button" id="save_erddap_query_url_btn" class="btn btn-primary">Save</button>
               </div>
@@ -157,6 +159,14 @@
 <script src="../js/zapidox.js"></script>
 <script>
   var erddap = undefined, dsid = undefined;
+  var updateErddapEditorLink = function(erddap_url){
+    try{
+      var link = erddap_url.replace(/\?.*$/,'').replace(/\.[^\.]$/,'.html');
+      $("#erddap_editor_link").attr("href",link);
+    }catch(e){
+      console.log(e);
+    }
+  }
   var getParsedErddapQueryUrl = function(){
     var parsed = { error: "That doesn't look like an ERDDAP Query"};
     try{
@@ -172,6 +182,9 @@
     }
     if(!(parsed.error || parsed.dataset_id)){
       parsed.error = "That doesn't look like an ERDDAP Query";
+    }
+    if(!parsed.error){
+      updateErddapEditorLink(parsed.erddap_url);
     }
     return parsed;
   }
@@ -247,38 +260,6 @@
     var parsed = parseAndValidateErddapURL();
 
   });
-  var doit = function(){
-    var parsed = getParsedErddapQueryUrl();
-    if(!parsed){
-      return;
-    }
-  getErddapZapidocs(erddap_query_url.toString()).then(function(zapidox){
-    if(typeof(zapidox) == "string"){
-      $("#output").val("There is an error in the current zapidox; please fix that first...");
-          //TODO: be more helpful.
-          return;
-        }
-        var formats = [];
-        $(':checkbox:checked').each(function(i){
-          formats[i] = $(this).val();
-        });
-        if(formats.length == 0){
-          formats.push(".csv0");
-        }
-        zapidox.push({name: $("#query_name").val(), 
-          description: $("#query_description").val(), 
-          formats: formats, 
-          query: erddap_query_url.search.substring(1)});
-        var lines = JSON.stringify(zapidox,null,4).split("\n");
-        lines.unshift('        <att name="zapidox"><![CDATA[');
-        lines.unshift('        <!-- zapidox for '+parsed.dataset_id+' -->');
-        lines.push("]]></att>")
-        $("#output").val(lines.join("\n"));
-        $("#output").attr("rows",lines.length);
-      },function(err){
-        $("#output").val(err);
-      });
-};
 
 var getExamples = function(){
   return $("a.methodName").map(function(){
@@ -370,6 +351,7 @@ var addMethod = function(method){
      var url = window.location.hash.substring(1);
      if(url.toLowerCase().startsWith("http")){
       $("#erddap_query_url").val(url);
+      updateErddapEditorLink(url);
      }
    }
 
@@ -379,6 +361,8 @@ var addMethod = function(method){
     <script src="https://cdn.jsdelivr.net/npm/markdown-it@10.0.0/dist/markdown-it.min.js"></script>
 
 <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.16.2/build/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.1.0/papaparse.min.js"></script>
+
 </body>
 
 </html>
