@@ -291,14 +291,15 @@ var getQueryOutput = function(url,params){
 		});
 }
 var generateMethodDocs = function(dataset, method,options, toc, dataset_link){
+	var getFormatName = (f)=>f.replace(/^\./,"");
 	return new Promise(function(resolve,reject){
 		var formats = method.formats || [".csv0"]
 		var output = [];
 		var generateFormatMethodDocs = function(format){
 			format = format || "";
 			var outputformat = {}[format] || format.replace(/^[^a-zA-Z]/g,"").replace(/[^a-zA-Z]$/g,"");
-			var formatNoExtension = format.replace(/^\./,"");
 			var base_url = dataset._summary.tabledap || dataset._summary.griddap;
+			var formatNoExtension = getFormatName(format);
 			var partial_url = base_url + "." + formatNoExtension
 			var full_url =  partial_url + "?" + method.query;
 			var params = [];
@@ -317,19 +318,36 @@ var generateMethodDocs = function(dataset, method,options, toc, dataset_link){
 				}
 			});
 
-			var id_prefix = dataset_link + "|" + (dataset.dataset_id+"-"+method.name+"-"+formatNoExtension).replace(/\W/,'-').replace(/--/g,'-').toLowerCase();
+			var section_prefix = dataset_link + "|" + (dataset.dataset_id+"-"+method.name).replace(/\W/,'-').replace(/--/g,'-').toLowerCase();
+			getIdPrefix = (f)=>(method.name+"-"+getFormatName(f)).replace(/\W/,'-').replace(/--/g,'-').toLowerCase();
+						var id_prefix = getIdPrefix(format);
 
 			output.push("");
+			var formatSelected = false;
 			if(options.tableInTitle){		
 				output.push(["## ",dataset.dataset_id,": ",method.name," (", formatNoExtension, ")"].join(""));
 			}else{
-				var title = method.name + " (" + formatNoExtension + ")";
 				if(options.bootstrap4){
-					toc.push(["<p>",'<a href="#',id_prefix,'">',title,"</a></p>"].join(""));
-					output.push('<hr id="'+id_prefix+'" /><div class="row"><div class="col-sm-7">')
-					output.push(["<h2>",title,"</h2>"].join(""));
+					var title = ["<p>",'<a href="#',section_prefix,'">',method.name,"</a></p>"].join("");
+					if(toc.indexOf(title)<0){
+						toc.push(title);
+						formatSelected = true;
+						output.push(['<h2 id="'+section_prefix+'">',method.name,"</h2>"].join(""));
+						output.push('<hr />');
+						output.push("<div>");
+						output.push('<ul class="nav nav-pills">');
+						output.push('<li class="nav-item"><a class="nav-link active" data-toggle="pill" href="#'+id_prefix+'">'+formatNoExtension+'</a></li>');
+						for(var x=0; x<formats.length; x++){
+							output.push('<li class="nav-item"><a class="nav-link" data-toggle="pill" href="#'+getIdPrefix(formats[x])+'">'+getFormatName(formats[x])+'</a></li>');
+						}
+						output.push('</ul>');
+						output.push('<div class="tab-content">');
+					}
+
+					output.push('<div id="'+id_prefix+'" class="tab-pane '+(formatSelected?"active":"fade")+'">');
+					output.push('<div class="row"><div class="col-sm-4">');
 				}else{
-					output.push("## " + title);
+					output.push("## " + method.name + " (" + formatNoExtension + ")");
 				}
 			}
 			output.push("");
@@ -339,25 +357,31 @@ var generateMethodDocs = function(dataset, method,options, toc, dataset_link){
 			var getBeforeCode = function(lang){return "\n```"+lang};
 			var getAfterCode = function(){return "```"};
 			var output_end = "";
-
+			
 			if(options.bootstrap4){
-				output_end = "</div></div>";
+				output_end = "</div></div></div>";
 				output.push("\n");
-				output.push('</div><div class="col-sm-5">');
+				output.push('</div><div class="col-sm-8">');
 				output.push('<ul class="nav nav-pills mb-5" id="pills-'+id_prefix+'-tab" role="tablist">');
-				var selected = true;
+				var langSelected = true;
 				["shell","python","r","javascript","csharp"].forEach((lang)=>{
 					var fix = (id_prefix+'-'+lang).replace(/[^\w\-\d_]/g,'-');
 					output.push('<li class="nav-item">');
-					output.push('<a class="codetab nav-link'+(selected?" active ":" ")+lang+'-lang" id="pills-'+fix+'-tab" data-lang=".'+lang+'-lang" data-toggle="pill" href="#pills-'+fix+'" role="tab" aria-controls="pills-'+fix+'" aria-selected="'+selected+'">'+lang+'</a>')
+					output.push('<a class="codetab nav-link'+(langSelected?" active ":" ")
+						+lang+'-lang" id="pills-'+fix+'-tab" data-lang=".'
+						+lang+'-lang" data-toggle="pill" href="#pills-'
+						+fix+'" role="tab" aria-controls="pills-'
+						+fix+'" aria-selected="'+langSelected+'">'
+						+lang+'</a>')
 					output.push('</li>');
-					selected = false;
+					langSelected = false;
 				});
 				output.push("</ul>");
 				output.push('<div class="tab-content" id="pills-'+id_prefix+'-tabContent">');
 				getBeforeCode = function(lang,active){
 					var fix = (id_prefix+'-'+lang).replace(/[^\w\-\d_]/g,'-');
-					return '<div class="tab-pane fade'+(active?" show active":"")+'" id="pills-'+fix+'" role="tabpanel" aria-labelledby="pills-'+fix+'-tab">\n\n```'+lang;
+					return '<div class="tab-pane fade'+(active?" show active":"")+'" id="pills-'
+						+fix+'" role="tabpanel" aria-labelledby="pills-'+fix+'-tab">\n\n```'+lang;
 				}
 				getAfterCode = function(){return "```\n\n</div>"};
 			}
@@ -396,6 +420,9 @@ var generateMethodDocs = function(dataset, method,options, toc, dataset_link){
 				if(formats.length){
 					generateFormatMethodDocs(formats.shift());
 				}else{
+					if(options.bootstrap4){
+						output.push("</div></div>");
+					}
 					resolve(output.join("\n"));
 				}
 			}
