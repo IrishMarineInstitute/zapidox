@@ -128,6 +128,9 @@ var generateAPIDocs = function(erddap, dataset_id, options){
 		    var parts = [overview,variables,exampleQuerySection];
 		    var zapidox = options.zapidox || _getMetaZapidocs(meta);
 			if(typeof(zapidox) == "object"){
+				if(options.example && zapidox.unshift){
+					zapidox.unshift(options.example)
+				}
 				var docs = [];
 				var generateZDocs = function(method){
 					generateMethodDocs(ds,method,options, toc, dataset_link).then(function(result){
@@ -320,7 +323,8 @@ var generateMethodDocs = function(dataset, method,options, toc, dataset_link){
 
 			var section_prefix = dataset_link + "|" + (dataset.dataset_id+"-"+method.name).replace(/\W/,'-').replace(/--/g,'-').toLowerCase();
 			getIdPrefix = (f)=>(method.name+"-"+getFormatName(f)).replace(/\W/,'-').replace(/--/g,'-').toLowerCase();
-						var id_prefix = getIdPrefix(format);
+			var id_prefix = getIdPrefix(format);
+			method.hash = '#'+section_prefix;
 
 			output.push("");
 			var formatSelected = false;
@@ -352,6 +356,8 @@ var generateMethodDocs = function(dataset, method,options, toc, dataset_link){
 			}
 			output.push("");
 			output.push(method.description);
+			output.push("");
+			output.push("Click on the links	to see the example code in different languages and formats.");
 			output.push("");
 
 			var getBeforeCode = function(lang){return "\n```"+lang};

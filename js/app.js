@@ -25,6 +25,15 @@ $(document).ready(function(){
 		if(url){
 			try{
 				new URL(url);
+				var example = undefined;
+				if(url.indexOf('?')>=0){
+					//assume the end of the url to be an example query
+					var example_query = url.split('?')[1];
+					example = {name: "exampleDataQuery", 
+						description: `This is an example of how to access 
+						the requested data from the ERDDAP server.`,
+						query: example_query}
+				}
 				var erddap_url = new URL(url.replace(/\/(table|grid)dap.*$/g,"/")).toString();
 				$("#erddap_url").val(erddap_url);
 				if(!$("#erddap_url").val()){
@@ -36,7 +45,7 @@ $(document).ready(function(){
           		if(dataset_id){
 	          		e.search(dataset_id).then(function(){
 					erddap = e;
-					listDatasets(dataset_id);
+					listDatasets(dataset_id, example);
 				},function(e){
 					console.log("failed to load ERDDAP from "+erddap_url,e);
 				});
@@ -82,12 +91,12 @@ $(document).ready(function(){
 	apidoxFromHash();
 });
 
-var inspectDataset = function(){
+var inspectDataset = function(example){
 	var dsid = $("#datasets").val() || $("#datasets").find("option:first-child").val();
 	if(dsid){
 		$("#output").val("generating...");
 		$("#preview").text("generating...");
-		var options = {bootstrap4: true};
+		var options = {bootstrap4: true, example: example};
 
 		generateAPIDocs(erddap,dsid,options).then(function(apidocs){
 			var docid = getDatasetLink(erddap.base_url,dsid);
@@ -104,6 +113,9 @@ var inspectDataset = function(){
 			$("#preview").append($(result));
 			$("#output").hide();
 			var oldhash =  window.location.hash.substring(1);
+			if(example && example.hash){
+				oldhash = example.hash;
+			}
 			window.location.hash = "#";
 			setTimeout(function(){
 				window.location.hash = oldhash;
@@ -112,7 +124,7 @@ var inspectDataset = function(){
 		})
 	}
 }
-var listDatasets = function(selected){
+var listDatasets = function(selected, example){
 	$('#datasets').empty();
 	erddap.search("tabledap").then(function(datasets){
 		if(datasets && datasets.length){
@@ -124,7 +136,7 @@ var listDatasets = function(selected){
 				}
 				$("#datasets").append($el);
 			});
-			inspectDataset();
+			inspectDataset(example);
 		}
 	});
 }
