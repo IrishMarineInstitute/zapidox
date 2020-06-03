@@ -296,7 +296,7 @@ var getQueryOutput = function(url,params){
 var generateMethodDocs = function(dataset, method,options, toc, dataset_link){
 	var getFormatName = (f)=>f.replace(/^\./,"");
 	return new Promise(function(resolve,reject){
-		var formats = method.formats || [".csv0"]
+		var formats = method.formats || [".csv0", ".jsonlKVP"]
 		var output = [];
 		var generateFormatMethodDocs = function(format){
 			format = format || "";
@@ -305,12 +305,12 @@ var generateMethodDocs = function(dataset, method,options, toc, dataset_link){
 			var formatNoExtension = getFormatName(format);
 			var partial_url = base_url + "." + formatNoExtension
 			var full_url =  partial_url + "?" + method.query;
+
 			var params = [];
 			if(full_url.startsWith("//")){
 				full_url = location.protocol+full_url;
 			}
-			//console.log(full_url);
-			var searchParams = new URL(full_url).searchParams;
+			var searchParams = full_url.toLowerCase().startsWith("http")?new URL(full_url).searchParams:new URL(full_url, dataset.erddap.base_url).searchParams;
 			searchParams.forEach((i,k)=>{
 				if (searchParams.get(k).length || method.query.indexOf(k+"=")>=0 || method.query.indexOf(encodeURIComponent(k)+"=")>=0){
 					var param = {};

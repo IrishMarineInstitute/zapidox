@@ -91,7 +91,7 @@ $(document).ready(function(){
 	apidoxFromHash();
 });
 
-var inspectDataset = function(example){
+var inspectDataset = function(e,example){
 	var dsid = $("#datasets").val() || $("#datasets").find("option:first-child").val();
 	if(dsid){
 		$("#output").val("generating...");
@@ -136,7 +136,7 @@ var listDatasets = function(selected, example){
 				}
 				$("#datasets").append($el);
 			});
-			inspectDataset(example);
+			inspectDataset(null,example);
 		}
 	});
 }

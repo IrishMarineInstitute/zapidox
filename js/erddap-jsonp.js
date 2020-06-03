@@ -109,6 +109,7 @@ DATASET = function(erddap,dsid){
 	              return isNaN(v) ? null : v
 	            };
 	            break;
+	          case 'char':
 	          case 'String':
 	            param_encoder[key] = function(v) {
 	              return '"' + v + '"'
