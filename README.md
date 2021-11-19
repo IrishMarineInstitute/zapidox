@@ -6,7 +6,7 @@ zapidox presents an API Documentation style interface for [ERDDAP](https://githu
 
 ## Acknowledgments
 
-![DAFM Logo](./img/dafm.png) ![Marine Institute Logo](./img/forasnamara.jpg) ![EU EMFF Logo](./img/eu-emff.png) ![EU Structural Infrastructure Fund and Programme Logo](./img/eu_sifp.jpg)
+![DAFM Logo](./img/dafm.png =x75) ![Marine Institute Logo](./img/forasnamara.jpg =x75) ![EU EMFF Logo](./img/eu-emff.png =x75) ![EU Structural Infrastructure Fund and Programme Logo](./img/eu_sifp.jpg =x75)
 
 This work is supported by the Irish Government and the European Maritime & Fisheries Fund as part of the EMFF Operational Programme for 2014–2020.
 
