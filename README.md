@@ -4,6 +4,12 @@ zapidox presents an API Documentation style interface for [ERDDAP](https://githu
 
 [Try it live](https://irishmarineinstitute.github.io/zapidox/#https://erddap.marine.ie/erddap/tabledap/IMI-TidePrediction_epa.html)
 
+## Acknowledgments
+
+![DAFM Logo](./img/dafm.png) ![Marine Institute Logo](./img/forasnamara.jpg) ![EU EMFF Logo](./img/eu-emff.png) ![EU Structural Infrastructure Fund and Programme Logo](./img/eu_sifp.jpg)
+
+This work is supported by the Irish Government and the European Maritime & Fisheries Fund as part of the EMFF Operational Programme for 2014–2020.
+
 ## How zapidox works
 
 Zapidox is a HTML+javascript application which runs in the browser. Zapidox makes standard requests to the selected [ERDDAP](https://github.com/IrishMarineInstitute/awesome-erddap) server, and renders the result for the user.
